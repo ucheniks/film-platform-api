@@ -57,10 +57,10 @@ public class FilmController {
 
 
     private Long getNextId() {
-        long maxId = films.keySet().stream().
-                mapToLong(id -> id).
-                max().
-                orElse(0);
+        long maxId = films.keySet().stream()
+                .mapToLong(id -> id)
+                .max()
+                .orElse(0);
         return ++maxId;
     }
 }

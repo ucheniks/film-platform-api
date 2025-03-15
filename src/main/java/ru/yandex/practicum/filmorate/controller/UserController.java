@@ -66,10 +66,10 @@ public class UserController {
 
 
     private Long getNextId() {
-        long maxId = users.keySet().stream().
-                mapToLong(id -> id).
-                max().
-                orElse(0);
+        long maxId = users.keySet().stream()
+                .mapToLong(id -> id)
+                .max()
+                .orElse(0);
         return ++maxId;
     }
 
