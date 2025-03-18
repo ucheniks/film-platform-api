@@ -19,6 +19,8 @@ import java.util.Map;
 public class FilmController {
     private final Map<Long, Film> films = new HashMap<>();
 
+    private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
+
     @GetMapping
     public List<Film> getUsers() {
         return new ArrayList<>(films.values());
@@ -27,10 +29,7 @@ public class FilmController {
     @PostMapping
     public Film addFilm(@Valid @RequestBody Film film) {
         log.info("Добавление нового фильма: {}", film);
-        if (film.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            log.error("Ошибка при добавлении фильма: дата релиза фильма {} раньше 28 декабря 1895 года", film.getName());
-            throw new ValidationException("Дата релиза фильма — не раньше 28 декабря 1895 года");
-        }
+        validateFilmReleaseDate(film);
         film.setId(getNextId());
         films.put(film.getId(), film);
         log.info("Фильм успешно добавлен: {}", film);
@@ -40,21 +39,26 @@ public class FilmController {
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film newFilm) {
         log.info("Обновление фильма: {}", newFilm);
-        if (!films.containsKey(newFilm.getId())) {
-            log.error("Ошибка при обновлении фильма: фильм с id {} не найден", newFilm.getId());
-            throw new NotFoundException("Фильм с id " + newFilm.getId() + " не найден");
-        }
-        if (newFilm.getReleaseDate().isBefore(LocalDate.of(1895, 12, 28))) {
-            log.error("Ошибка при обновлении фильма: дата релиза фильма {} раньше 28 декабря 1895 года", newFilm.getName());
-            throw new ValidationException("Дата релиза фильма — не раньше 28 декабря 1895 года");
-        }
-
+        validateFilmExists(newFilm.getId());
+        validateFilmReleaseDate(newFilm);
         films.put(newFilm.getId(), newFilm);
         log.info("Фильм успешно обновлён: {}", newFilm);
         return newFilm;
-
     }
 
+    private void validateFilmReleaseDate(Film film) {
+        if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
+            log.error("Ошибка при валидации фильма: дата релиза фильма {} раньше {}", film.getName(), MIN_RELEASE_DATE);
+            throw new ValidationException("Дата релиза фильма — не раньше " + MIN_RELEASE_DATE);
+        }
+    }
+
+    private void validateFilmExists(Long filmId) {
+        if (!films.containsKey(filmId)) {
+            log.error("Ошибка при обновлении фильма: фильм с id {} не найден", filmId);
+            throw new NotFoundException("Фильм с id " + filmId + " не найден");
+        }
+    }
 
     private Long getNextId() {
         long maxId = films.keySet().stream()

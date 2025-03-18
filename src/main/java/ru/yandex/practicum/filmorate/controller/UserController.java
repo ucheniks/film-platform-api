@@ -24,46 +24,57 @@ public class UserController {
     @PostMapping
     public User addUser(@Valid @RequestBody User user) {
         log.info("Добавление нового пользователя: {}", user);
-        if (emails.contains(user.getEmail())) {
-            log.error("Ошибка при добавлении пользователя: email {} уже существует", user.getEmail());
-            throw new ValidationException("Пользователь с email " + user.getEmail() + " уже существует");
-        }
+        validateEmail(user.getEmail());
         user.setId(getNextId());
-        if (user.getName() == null || user.getName().isBlank()) {
-            user.setName(user.getLogin());
-        }
+        setDefaultName(user);
         users.put(user.getId(), user);
-        log.info("Пользователь успешно добавлен: {}", user);
         emails.add(user.getEmail());
+        log.info("Пользователь успешно добавлен: {}", user);
         return user;
     }
 
     @PutMapping
     public User update(@Valid @RequestBody User newUser) {
         log.info("Обновление пользователя: {}", newUser);
-        if (!users.containsKey(newUser.getId())) {
-            log.error("Ошибка при обновлении пользователя: пользователь с id {} не найден", newUser.getId());
-            throw new NotFoundException("Пользователь с id " + newUser.getId() + " не найден");
-        }
+        validateUserExists(newUser.getId());
         User oldUser = users.get(newUser.getId());
+
         if (!oldUser.getEmail().equals(newUser.getEmail())) {
-            if (emails.contains(newUser.getEmail())) {
-                log.error("Ошибка при обновлении пользователя: email {} уже существует", newUser.getEmail());
-                throw new ValidationException("Пользователь с email " + newUser.getEmail() + " уже существует");
-            }
-        }
-        emails.remove(oldUser.getEmail());
-        emails.add(newUser.getEmail());
-
-        if (newUser.getName() == null || newUser.getName().isBlank()) {
-            newUser.setName(newUser.getLogin());
+            validateEmail(newUser.getEmail());
+            emails.remove(oldUser.getEmail());
+            emails.add(newUser.getEmail());
         }
 
+        setDefaultName(newUser);
         users.put(newUser.getId(), newUser);
         log.info("Пользователь успешно обновлён: {}", newUser);
         return newUser;
     }
 
+    private void validateEmail(String email) {
+        if (emails.contains(email)) {
+            log.error("Ошибка при добавлении/обновлении пользователя: email {} уже существует", email);
+            throw new ValidationException("Пользователь с email " + email + " уже существует");
+        }
+    }
+
+    private void validateUserExists(Long userId) {
+        if (!users.containsKey(userId)) {
+            log.error("Ошибка при обновлении пользователя: пользователь с id {} не найден", userId);
+            throw new NotFoundException("Пользователь с id " + userId + " не найден");
+        }
+    }
+
+    private void setDefaultName(User user) {
+        if (user.getName() == null || user.getName().isBlank()) {
+            user.setName(user.getLogin());
+        }
+    }
+
+    public void clear() {
+        users.clear();
+        emails.clear();
+    }
 
     private Long getNextId() {
         long maxId = users.keySet().stream()
@@ -72,6 +83,4 @@ public class UserController {
                 .orElse(0);
         return ++maxId;
     }
-
 }
-

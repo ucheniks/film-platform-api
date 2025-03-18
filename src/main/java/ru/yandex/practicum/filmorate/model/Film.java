@@ -8,7 +8,8 @@ import lombok.Data;
 import java.time.LocalDate;
 
 @Data
-public class Film {
+public class
+Film {
     private Long id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
