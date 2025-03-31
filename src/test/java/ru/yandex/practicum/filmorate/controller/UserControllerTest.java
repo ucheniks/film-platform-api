@@ -32,7 +32,7 @@ public class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        userController.clear();
+
         validUser = new User();
         validUser.setEmail("test@mail.ru");
         validUser.setLogin("validLogin");
