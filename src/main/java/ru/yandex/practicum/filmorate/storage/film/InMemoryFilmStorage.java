@@ -26,10 +26,11 @@ public class InMemoryFilmStorage implements FilmStorage {
 
     @Override
     public Film getFilmById(Long id) {
-        log.info("Получение фильма по id: {}",id);
+        log.info("Получение фильма по id: {}", id);
         validateFilmExists(id);
         return films.get(id);
     }
+
     @Override
     public Film addFilm(Film film) {
         log.info("Добавление нового фильма: {}", film);
@@ -47,7 +48,7 @@ public class InMemoryFilmStorage implements FilmStorage {
         validateFilmExists(newFilm.getId());
         validateFilmReleaseDate(newFilm);
         if (newFilm.getLikes() == null) {
-            Set<Long> likes=films.get(newFilm.getId()).getLikes();
+            Set<Long> likes = films.get(newFilm.getId()).getLikes();
             newFilm.setLikes(likes);
         }
         films.put(newFilm.getId(), newFilm);
