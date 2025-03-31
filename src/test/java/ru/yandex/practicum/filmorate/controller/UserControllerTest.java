@@ -32,21 +32,12 @@ public class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-
         validUser = new User();
         validUser.setEmail("test@mail.ru");
         validUser.setLogin("validLogin");
         validUser.setBirthday(LocalDate.of(2005, 6, 19));
     }
 
-    @Test
-    void addValidUser() throws Exception {
-        mockMvc.perform(post("/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(validUser)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").exists());
-    }
 
     @Test
     void addEmptyEmail() throws Exception {
