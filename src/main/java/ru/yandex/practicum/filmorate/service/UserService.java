@@ -21,6 +21,22 @@ public class UserService {
         this.userStorage = userStorage;
     }
 
+    public List<User> getUsers() {
+        return userStorage.getUsers();
+    }
+
+    public User getUserById(Long id) {
+        return userStorage.getUserById(id);
+    }
+
+    public User addUser(User user) {
+        return userStorage.addUser(user);
+    }
+
+    public User updateUser(User newUser) {
+        return userStorage.updateUser(newUser);
+    }
+
     public List<User> addFriend(Long userId, Long friendId) {
         log.info("Добавления друга с id {} пользователю с id {}", friendId, userId);
         User user = userStorage.getUserById(userId);
