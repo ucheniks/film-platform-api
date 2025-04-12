@@ -38,3 +38,4 @@ Template repository for Filmorate project.
 ### friends
 *   user_id: bigint PK, FK >- users.user_id
 *   friend_id: bigint PK, FK >- users.user_id
+*   status:  varchar(10)
