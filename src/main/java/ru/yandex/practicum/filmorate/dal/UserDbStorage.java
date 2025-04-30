@@ -19,34 +19,34 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM users WHERE user_id = ?";
     private static final String FIND_BY_EMAIL_QUERY = "SELECT * FROM users WHERE email = ?";
     private static final String INSERT_QUERY = """
-            INSERT INTO users(email, login, name, birthday) 
+            INSERT INTO users(email, login, name, birthday)
             VALUES (?, ?, ?, ?)""";
     private static final String UPDATE_QUERY = """
-            UPDATE users 
-            SET email = ?, login = ?, name = ?, birthday = ? 
+            UPDATE users
+            SET email = ?, login = ?, name = ?, birthday = ?
             WHERE user_id = ?""";
     private static final String ADD_FRIEND_QUERY = """
-            MERGE INTO friends(user_id, friend_id, status) 
+            MERGE INTO friends(user_id, friend_id, status)
             KEY(user_id, friend_id)
             VALUES (?, ?, ?)""";
     private static final String CONFIRM_FRIEND_QUERY = """
-            UPDATE friends 
-            SET status = 'CONFIRMED' 
+            UPDATE friends
+            SET status = 'CONFIRMED'
             WHERE user_id = ? AND friend_id = ?""";
     private static final String REMOVE_FRIEND_QUERY = """
-            DELETE FROM friends 
-            WHERE (user_id = ? AND friend_id = ?) """;
+            DELETE FROM friends
+            WHERE (user_id = ? AND friend_id = ?)""";
     private static final String GET_FRIENDS_QUERY = """
-            SELECT u.* , f.status FROM users u 
-            JOIN friends f ON u.user_id = f.friend_id 
+            SELECT u.* , f.status FROM users u
+            JOIN friends f ON u.user_id = f.friend_id
             WHERE f.user_id = ?""";
     private static final String GET_COMMON_FRIENDS_QUERY = """
-            SELECT u.* FROM users u 
-            JOIN friends f1 ON u.user_id = f1.friend_id AND f1.user_id = ? 
+            SELECT u.* FROM users u
+            JOIN friends f1 ON u.user_id = f1.friend_id AND f1.user_id = ?
             JOIN friends f2 ON u.user_id = f2.friend_id AND f2.user_id = ?""";
     private static final String UNCONFIRMED_FRIEND_QUERY = """
-            UPDATE friends 
-            SET status = 'UNCONFIRMED' 
+            UPDATE friends
+            SET status = 'UNCONFIRMED'
             WHERE user_id = ? AND friend_id = ?""";
 
     private final JdbcTemplate jdbc;

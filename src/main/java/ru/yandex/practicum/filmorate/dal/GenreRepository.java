@@ -15,7 +15,7 @@ public class GenreRepository extends BaseDbStorage<Genre> {
     private static final String FIND_ALL_QUERY = "SELECT * FROM genres ORDER BY genre_id";
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM genres WHERE genre_id = ?";
     private static final String FIND_BY_FILM_QUERY = """
-            SELECT g.* 
+            SELECT g.*
             FROM genres g
             JOIN film_genres fg ON g.genre_id = fg.genre_id
             WHERE fg.film_id = ?
