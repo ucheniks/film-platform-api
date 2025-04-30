@@ -38,7 +38,7 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void AddAndFindFilmById() {
+    void addAndFindFilmById() {
         Film addedFilm = filmStorage.addFilm(testFilm);
         Film foundFilm = filmStorage.getFilmById(addedFilm.getId());
 
@@ -49,7 +49,7 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void UpdateFilm() {
+    void updateFilm() {
         Film addedFilm = filmStorage.addFilm(testFilm);
         addedFilm.setDescription("Updated Description");
 
@@ -60,7 +60,7 @@ class FilmDbStorageTest {
     }
 
     @Test
-    void GetPopularFilms() {
+    void getPopularFilms() {
         Film film1 = filmStorage.addFilm(testFilm);
 
         Film film2 = new Film();

@@ -33,7 +33,7 @@ class UserDbStorageTest {
     }
 
     @Test
-    void AddAndFindUserById() {
+    void addAndFindUserById() {
         User addedUser = userStorage.addUser(testUser);
         User foundUser = userStorage.getUserById(addedUser.getId());
 
@@ -44,7 +44,7 @@ class UserDbStorageTest {
     }
 
     @Test
-    void UpdateUser() {
+    void updateUser() {
         User addedUser = userStorage.addUser(testUser);
         addedUser.setName("Updated Name");
 
@@ -55,7 +55,7 @@ class UserDbStorageTest {
     }
 
     @Test
-    void AddAndGetFriends() {
+    void addAndGetFriends() {
         User user1 = userStorage.addUser(testUser);
 
         User user2 = new User();
