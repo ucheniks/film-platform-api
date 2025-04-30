@@ -15,8 +15,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserRowMapper implements RowMapper<User> {
     private static final String FIND_FRIENDS_QUERY = """
-            SELECT friend_id, status 
-            FROM friends 
+            SELECT friend_id, status
+            FROM friends
             WHERE user_id = ?""";
 
     private final JdbcTemplate jdbcTemplate;
