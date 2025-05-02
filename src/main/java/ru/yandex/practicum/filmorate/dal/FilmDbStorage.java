@@ -112,10 +112,9 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     }
 
     private void addGenresToDb(Film film) {
-        List<Long> genreIds = new ArrayList<>
-                (film.getGenres().stream()
-                        .map(Genre::getId)
-                        .toList());
+        List<Long> genreIds = new ArrayList<>(film.getGenres().stream()
+                .map(Genre::getId)
+                .toList());
         genreRepository.addGenresToFilm(film.getId(), genreIds);
     }
 
