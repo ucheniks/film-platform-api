@@ -8,6 +8,7 @@ import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Genre;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 @Slf4j
 @Repository
@@ -20,8 +21,9 @@ public class GenreRepository extends BaseDbStorage<Genre> {
             JOIN film_genres fg ON g.genre_id = fg.genre_id
             WHERE fg.film_id = ?
             ORDER BY g.genre_id""";
-    private static final String INSERT_GENRE_QUERY = "INSERT INTO film_genres(film_id, genre_id) VALUES (?, ?)";
     private static final String DELETE_GENRES_QUERY = "DELETE FROM film_genres WHERE film_id = ?";
+    private static final String FIND_BY_IDS_QUERY = "SELECT * FROM genres WHERE genre_id IN (%s)";
+    private static final String INSERT_GENRES_QUERY = "INSERT INTO film_genres(film_id, genre_id) VALUES %s";
 
     private final JdbcTemplate jdbc;
 
@@ -48,10 +50,34 @@ public class GenreRepository extends BaseDbStorage<Genre> {
         return findMany(FIND_BY_FILM_QUERY, filmId);
     }
 
-    public void addGenreToFilm(Long filmId, Long genreId) {
-        log.info("Добавление жанра к фильму");
-        jdbc.update(INSERT_GENRE_QUERY, filmId, genreId);
-        log.info("Добавил к фильму жанр");
+    public Set<Genre> findByIds(List<Long> ids) {
+        if (ids.isEmpty()) {
+            return new HashSet<>();
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        String query = String.format(FIND_BY_IDS_QUERY, placeholders);
+
+        Object[] params = ids.toArray();
+
+        return new LinkedHashSet<>(findMany(query, params));
+    }
+
+    public void addGenresToFilm(Long filmId, List<Long> ids) {
+        if (ids.isEmpty()) {
+            return;
+        }
+
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "(?, ?)"));
+        String query = String.format(INSERT_GENRES_QUERY, placeholders);
+
+        Object[] params = ids.stream()
+                .flatMap(genreId -> Stream.of(filmId, genreId))
+                .toArray();
+
+        log.info("Добавление жанров {} к фильму {}", ids, filmId);
+        jdbc.update(query, params);
+        log.info("Жанры успешно добавлены");
     }
 
     public void removeAllGenresFromFilm(Long filmId) {

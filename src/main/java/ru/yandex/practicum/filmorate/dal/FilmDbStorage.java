@@ -12,7 +12,6 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -103,25 +102,36 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private Film setMpaAndGenresToFilm(Film film) {
         Long mpaId = film.getMpa().getId();
         film.setMpa(mpaRatingRepository.getById(mpaId));
-        Set<Genre> genres = film.getGenres().stream()
+        List<Long> genreIds = film.getGenres().stream()
                 .map(Genre::getId)
-                .map(genreRepository::getById)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-
+                .toList();
+        validateGenres(genreIds);
+        Set<Genre> genres = genreRepository.findByIds(genreIds);
         film.setGenres(genres);
         return film;
     }
 
     private void addGenresToDb(Film film) {
-        film.getGenres().stream()
-                .map(Genre::getId)
-                .forEach((id -> genreRepository.addGenreToFilm(film.getId(), id)));
+        List<Long> genreIds = new ArrayList<>
+                (film.getGenres().stream()
+                        .map(Genre::getId)
+                        .toList());
+        genreRepository.addGenresToFilm(film.getId(), genreIds);
     }
 
     private void validateFilmReleaseDate(Film film) {
         if (film.getReleaseDate().isBefore(MIN_RELEASE_DATE)) {
             log.error("Ошибка при валидации фильма: дата релиза фильма {} раньше {}", film.getName(), MIN_RELEASE_DATE);
             throw new ValidationException("Дата релиза фильма — не раньше " + MIN_RELEASE_DATE);
+        }
+    }
+
+    private void validateGenres(List<Long> genreIds) {
+        boolean isValid = genreIds.stream()
+                .allMatch(id -> id >= 1 && id <= 6);
+
+        if (!isValid) {
+            throw new NotFoundException("Id жанров должны быть в диапазоне от 1 до 6");
         }
     }
 }
