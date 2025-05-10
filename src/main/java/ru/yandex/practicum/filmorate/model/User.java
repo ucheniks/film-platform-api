@@ -4,10 +4,12 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 @Data
 public class User {
+
     private Long id;
 
     @NotBlank(message = "Электронная почта пользователя не может быть пустой")
@@ -23,13 +25,11 @@ public class User {
     @PastOrPresent(message = "Дата рождения не может быть в будущем")
     private LocalDate birthday;
 
-    private Set<Long> friends;
+    private Map<Long, FriendshipStatus> friends = new HashMap<>();
 
-    public void addFriend(Long id) {
-        friends.add(id);
-    }
 
-    public void removeFriend(Long id) {
-        friends.remove(id);
+    public enum FriendshipStatus {
+        UNCONFIRMED,
+        CONFIRMED
     }
 }

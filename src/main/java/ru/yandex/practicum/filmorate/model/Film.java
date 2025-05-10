@@ -1,16 +1,13 @@
 package ru.yandex.practicum.filmorate.model;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.Set;
+import java.util.*;
 
 @Data
-public class
-Film {
+public class Film {
     private Long id;
 
     @NotBlank(message = "Название фильма не может быть пустым")
@@ -19,18 +16,16 @@ Film {
     @Size(max = 200, message = "Максимальная длина описания фильма — 200 символов")
     private String description;
 
+    @NotNull(message = "Дата релиза должна быть указана")
     private LocalDate releaseDate;
 
     @Positive(message = "Продолжительность фильма должна быть положительным числом")
     private int duration;
 
-    private Set<Long> likes;
+    private Set<Long> likes = new HashSet<>();
 
-    public void addLike(Long id) {
-        likes.add(id);
-    }
+    private MpaRating mpa = new MpaRating(null, null);
 
-    public void removeLike(Long id) {
-        likes.remove(id);
-    }
+    private Set<Genre> genres = new LinkedHashSet<>();
+
 }
