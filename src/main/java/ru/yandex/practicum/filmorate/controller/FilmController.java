@@ -72,6 +72,7 @@ public class FilmController {
             @RequestParam(defaultValue = DEFAULT_DIRECTORS_SORT_TYPE) String sortBy) {
         log.info("Получение фильмов режиссёра, отсортированных по {}", sortBy);
         return filmService.getDirectorsFilms(directorId, sortBy);
+    }
 
     @GetMapping("/common")
     public List<Film> getCommonFilms (
