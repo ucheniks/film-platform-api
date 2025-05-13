@@ -42,7 +42,8 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             GROUP BY f.film_id
             ORDER BY f.release_date
             """;
-
+    private static final String GET_COMMON_QUERY = "SELECT f.* FROM films f JOIN likes l1 ON f.film_id = l1.film_id AND l1.user_id = ? JOIN likes l2 ON f.film_id = l2.film_id AND l2.user_id = ?";
+  
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
 
 
@@ -131,6 +132,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             default:
                 throw new ParameterNotValidException("Параметр сортировки может быть только: likes, year");
         }
+    }
+  
+    public List<Film> getCommonFilms(Long userId, Long friendId) {
+        return (jdbc.query(GET_COMMON_QUERY, filmRowMapper, userId, friendId));
     }
 
     private Film setMpaAndGenresAndDirectorsToFilm(Film film) {
