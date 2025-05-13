@@ -121,13 +121,13 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         return jdbc.query(GET_POPULAR_QUERY, filmRowMapper, count);
     }
 
-    public List<Film> getDirectorsFilms(Long director_id, String sortBy) {
-        directorRepository.getById(director_id);
+    public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        directorRepository.getById(directorId);
         switch (sortBy) {
             case "likes":
-                return jdbc.query(GET_DIRECTORS_FILMS_BY_LIKES, filmRowMapper, director_id);
+                return jdbc.query(GET_DIRECTORS_FILMS_BY_LIKES, filmRowMapper, directorId);
             case "year":
-                return jdbc.query(GET_DIRECTORS_FILMS_BY_YEAR, filmRowMapper, director_id);
+                return jdbc.query(GET_DIRECTORS_FILMS_BY_YEAR, filmRowMapper, directorId);
             default:
                 throw new ParameterNotValidException("Параметр сортировки может быть только: likes, year");
         }
