@@ -16,6 +16,7 @@ import java.util.List;
 @RequestMapping("/films")
 public class FilmController {
     private final FilmService filmService;
+    private static final String DEFAULT_DIRECTORS_SORT_TYPE = "likes";
 
     @GetMapping
     public List<Film> getAllFilms() {
@@ -74,5 +75,21 @@ public class FilmController {
             log.info("С фильтрацией за {} год", year);
         }
         return filmService.getPopularFilms(count, genreId, year);
+    }
+
+    @GetMapping("/director/{directorId}")
+    private List<Film> getDirectorsFilms(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = DEFAULT_DIRECTORS_SORT_TYPE) String sortBy) {
+        log.info("Получение фильмов режиссёра, отсортированных по {}", sortBy);
+        return filmService.getDirectorsFilms(directorId, sortBy);
+    }
+
+    @GetMapping("/common")
+    public List<Film> getCommonFilms(
+            @RequestParam Long userId,
+            @RequestParam Long friendId) {
+        log.info("Получение общих фильмов у пользователей с id {} и {}", userId, friendId);
+        return filmService.getCommonFilms(userId, friendId);
     }
 }
