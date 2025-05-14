@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.*;
 
 @JdbcTest
 @AutoConfigureTestDatabase
-@Import({UserDbStorage.class, UserRowMapper.class})
+@Import({UserDbStorage.class, UserRowMapper.class, FilmDbStorage.class})
 class UserDbStorageTest {
 
     @Autowired
