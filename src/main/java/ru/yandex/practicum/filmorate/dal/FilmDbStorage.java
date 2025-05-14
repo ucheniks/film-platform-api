@@ -25,6 +25,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private static final String ADD_LIKE_QUERY = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
     private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+    private static final String GET_LIKED_FILMS = "SELECT film_id FROM likes WHERE user_id = ?";
+    private static final String GET_SIMILAR_USER = "SELECT user_id FROM likes WHERE film_id IN (SELECT film_id FROM likes WHERE user_id = ?) AND user_id != ? GROUP BY user_id ORDER BY COUNT(film_id) DESC LIMIT 1";
+    private static final String GET_SIMILAR_USER_LIKED_FILMS = "SELECT  f.* FROM films f JOIN likes l ON f.film_id = l.film_id WHERE user_id IN (" + GET_SIMILAR_USER + ")";
+    private static final String GET_FILM_RECOMMENDATIONS = GET_SIMILAR_USER_LIKED_FILMS + "AND l.film_id NOT IN (" + GET_LIKED_FILMS + ")";
     private static final String GET_DIRECTORS_FILMS_BY_LIKES = """
             SELECT f.*
             FROM films f
@@ -122,6 +126,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         return jdbc.query(GET_POPULAR_QUERY, filmRowMapper, count);
     }
 
+    public List<Film> getRecommendations(Long userId) {
+        return jdbc.query(GET_FILM_RECOMMENDATIONS, mapper, userId, userId, userId);
+    }
+
     public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
         directorRepository.getById(directorId);
         switch (sortBy) {
@@ -188,6 +196,4 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             throw new NotFoundException("Id жанров должны быть в диапазоне от 1 до 6");
         }
     }
-
-
 }
