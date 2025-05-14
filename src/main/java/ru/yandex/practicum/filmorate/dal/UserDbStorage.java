@@ -87,8 +87,8 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
 
     @Override
     public User updateUser(User user) {
-        validateUser(user);
         getUserById(user.getId());
+        validateUser(user);
 
         update(UPDATE_QUERY,
                 user.getEmail(),

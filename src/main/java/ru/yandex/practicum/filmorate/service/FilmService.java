@@ -64,6 +64,10 @@ public class FilmService {
         return filmStorage.getPopularFilms(count);
     }
 
+    public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        return filmStorage.getDirectorsFilms(directorId, sortBy);
+    }
+
     public List<Film> getCommonFilms(Long userId, Long friendId) {
         if (userId == null || friendId == null) {
             throw new ParameterNotValidException("userId и friendId не могут быть null");

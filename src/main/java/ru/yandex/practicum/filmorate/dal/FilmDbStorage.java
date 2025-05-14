@@ -5,7 +5,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.FilmRowMapper;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
+import ru.yandex.practicum.filmorate.exceptions.ParameterNotValidException;
 import ru.yandex.practicum.filmorate.exceptions.ValidationException;
+import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
@@ -23,6 +25,23 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private static final String ADD_LIKE_QUERY = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
     private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+    private static final String GET_DIRECTORS_FILMS_BY_LIKES = """
+            SELECT f.*
+            FROM films f
+            JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN likes l ON f.film_id = l.film_id
+            WHERE fd.director_id = ?
+            GROUP BY f.film_id
+            ORDER BY COUNT(l.user_id) DESC
+            """;
+    private static final String GET_DIRECTORS_FILMS_BY_YEAR = """
+            SELECT f.*
+            FROM films f
+            JOIN film_directors fd ON f.film_id = fd.film_id
+            WHERE fd.director_id = ?
+            GROUP BY f.film_id
+            ORDER BY f.release_date
+            """;
     private static final String GET_COMMON_QUERY = "SELECT f.* FROM films f JOIN likes l1 ON f.film_id = l1.film_id AND l1.user_id = ? JOIN likes l2 ON f.film_id = l2.film_id AND l2.user_id = ?";
 
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
@@ -32,16 +51,19 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private final FilmRowMapper filmRowMapper;
     private final MpaRatingRepository mpaRatingRepository;
     private final GenreRepository genreRepository;
+    private final DirectorRepository directorRepository;
 
     public FilmDbStorage(JdbcTemplate jdbc,
                          FilmRowMapper filmRowMapper,
                          MpaRatingRepository mpaRatingRepository,
-                         GenreRepository genreRepository) {
+                         GenreRepository genreRepository,
+                         DirectorRepository directorRepository) {
         super(jdbc, filmRowMapper);
         this.jdbc = jdbc;
         this.filmRowMapper = filmRowMapper;
         this.mpaRatingRepository = mpaRatingRepository;
         this.genreRepository = genreRepository;
+        this.directorRepository = directorRepository;
     }
 
     @Override
@@ -59,7 +81,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     public Film addFilm(Film film) {
         validateFilmReleaseDate(film);
         log.info("Добавление фильма с id {} на уровне репозитория 1", film.getId());
-        film = setMpaAndGenresToFilm(film);
+        film = setMpaAndGenresAndDirectorsToFilm(film);
         log.info("Добавление фильма с id {} на уровне репозитория 2", film.getId());
         long id = insert(INSERT_QUERY,
                 film.getName(),
@@ -68,7 +90,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
                 film.getDuration(),
                 film.getMpa().getId());
         film.setId(id);
-        addGenresToDb(film);
+        addGenresAndDirectorsToDb(film);
         log.info("Добавление жанров к фильму с id {} на уровне репозитория", film.getId());
         return film;
     }
@@ -76,7 +98,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     @Override
     public Film updateFilm(Film film) {
         validateFilmReleaseDate(film);
-        film = setMpaAndGenresToFilm(film);
+        film = setMpaAndGenresAndDirectorsToFilm(film);
         update(UPDATE_QUERY,
                 film.getName(),
                 film.getDescription(),
@@ -84,7 +106,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
-        addGenresToDb(film);
+        addGenresAndDirectorsToDb(film);
         return film;
     }
 
@@ -100,27 +122,55 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         return jdbc.query(GET_POPULAR_QUERY, filmRowMapper, count);
     }
 
+    public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        directorRepository.getById(directorId);
+        switch (sortBy) {
+            case "likes":
+                return jdbc.query(GET_DIRECTORS_FILMS_BY_LIKES, filmRowMapper, directorId);
+            case "year":
+                return jdbc.query(GET_DIRECTORS_FILMS_BY_YEAR, filmRowMapper, directorId);
+            default:
+                throw new ParameterNotValidException("Параметр сортировки может быть только: likes, year");
+        }
+    }
+
     public List<Film> getCommonFilms(Long userId, Long friendId) {
         return (jdbc.query(GET_COMMON_QUERY, filmRowMapper, userId, friendId));
     }
 
-    private Film setMpaAndGenresToFilm(Film film) {
+    private Film setMpaAndGenresAndDirectorsToFilm(Film film) {
         Long mpaId = film.getMpa().getId();
         film.setMpa(mpaRatingRepository.getById(mpaId));
+
         List<Long> genreIds = film.getGenres().stream()
                 .map(Genre::getId)
                 .toList();
         validateGenres(genreIds);
         Set<Genre> genres = genreRepository.findByIds(genreIds);
         film.setGenres(genres);
+
+        List<Long> directorsIds = film.getDirectors().stream()
+                .map(Director::getId)
+                .toList();
+        Set<Director> directors = directorRepository.findByIds(directorsIds);
+        film.setDirectors(directors);
+
         return film;
     }
 
-    private void addGenresToDb(Film film) {
+    private void addGenresAndDirectorsToDb(Film film) {
         List<Long> genreIds = new ArrayList<>(film.getGenres().stream()
                 .map(Genre::getId)
                 .toList());
+        genreRepository.removeAllGenresFromFilm(film.getId());
         genreRepository.addGenresToFilm(film.getId(), genreIds);
+
+        List<Long> directorsIds = new ArrayList<>(film.getDirectors().stream()
+                .map(Director::getId)
+                .toList());
+        directorRepository.removeAllDirectorsFromFilm(film.getId());
+        directorRepository.addDirectorsToFilm(film.getId(), directorsIds);
+
     }
 
     private void validateFilmReleaseDate(Film film) {
@@ -138,4 +188,6 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             throw new NotFoundException("Id жанров должны быть в диапазоне от 1 до 6");
         }
     }
+
+
 }

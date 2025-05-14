@@ -17,6 +17,7 @@ import java.util.List;
 public class FilmController {
     private final FilmService filmService;
     private static final String DEFAULT_POPULAR_COUNT = "10";
+    private static final String DEFAULT_DIRECTORS_SORT_TYPE = "likes";
 
     @GetMapping
     public List<Film> getAllFilms() {
@@ -63,6 +64,14 @@ public class FilmController {
             @RequestParam(defaultValue = DEFAULT_POPULAR_COUNT) int count) {
         log.info("Получение топ-{} популярных фильмов", count);
         return filmService.getPopularFilms(count);
+    }
+
+    @GetMapping("/director/{directorId}")
+    private List<Film> getDirectorsFilms(
+            @PathVariable Long directorId,
+            @RequestParam(defaultValue = DEFAULT_DIRECTORS_SORT_TYPE) String sortBy) {
+        log.info("Получение фильмов режиссёра, отсортированных по {}", sortBy);
+        return filmService.getDirectorsFilms(directorId, sortBy);
     }
 
     @GetMapping("/common")
