@@ -16,6 +16,28 @@ import java.util.Optional;
 @Repository
 public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStorage {
 
+    private static final String FIND_BY_ID_QUERY = "SELECT * FROM reviews WHERE review_id = ?";
+    private static final String FIND_BY_FILM_QUERY = "SELECT * FROM reviews WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
+    private static final String INSERT_REVIEW_QUERY =
+            "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, 0)";
+    private static final String UPDATE_REVIEW_QUERY =
+            "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
+    private static final String DELETE_REVIEW_QUERY =
+            "DELETE FROM reviews WHERE review_id = ?";
+
+    private static final String CHECK_LIKE_QUERY =
+            "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ?";
+    private static final String INSERT_LIKE_QUERY =
+            "INSERT INTO review_likes (review_id, user_id, is_positive) VALUES (?, ?, ?)";
+    private static final String UPDATE_LIKE_QUERY =
+            "UPDATE review_likes SET is_positive = ? WHERE review_id = ? AND user_id = ?";
+    private static final String DELETE_LIKE_QUERY =
+            "DELETE FROM review_likes WHERE review_id = ? AND user_id = ?";
+    private static final String GET_LIKE_STATUS_QUERY =
+            "SELECT is_positive FROM review_likes WHERE review_id = ? AND user_id = ?";
+    private static final String UPDATE_USEFUL_QUERY =
+            "UPDATE reviews SET useful = useful + ? WHERE review_id = ?";
+
     @Autowired
     public ReviewDbStorage(JdbcTemplate jdbc, ReviewRowMapper reviewRowMapper) {
         super(jdbc, reviewRowMapper);
@@ -23,20 +45,17 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
 
     @Override
     public Optional<Review> getReviewById(long reviewId) {
-        String query = "SELECT * FROM reviews WHERE review_id = ?";
-        return findOne(query, reviewId);
+        return findOne(FIND_BY_ID_QUERY, reviewId);
     }
 
     @Override
     public List<Review> getReviewsByFilmId(long filmId, int count) {
-        String query = "SELECT * FROM reviews WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
-        return findMany(query, filmId, count);
+        return findMany(FIND_BY_FILM_QUERY, filmId, count);
     }
 
     @Override
     public Review addReview(Review review) {
-        String query = "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, 0)";
-        long reviewId = insert(query,
+        long reviewId = insert(INSERT_REVIEW_QUERY,
                 review.getContent(),
                 review.getIsPositive(),
                 review.getUserId(),
@@ -47,15 +66,13 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
 
     @Override
     public Review updateReview(Review review) {
-        String query = "UPDATE reviews SET content = ?, is_positive = ? WHERE review_id = ?";
-        update(query, review.getContent(), review.getIsPositive(), review.getReviewId());
+        update(UPDATE_REVIEW_QUERY, review.getContent(), review.getIsPositive(), review.getReviewId());
         return review;
     }
 
     @Override
     public void deleteReview(long reviewId) {
-        String query = "DELETE FROM reviews WHERE review_id = ?";
-        update(query, reviewId);
+        update(DELETE_REVIEW_QUERY, reviewId);
     }
 
     @Override
@@ -64,24 +81,19 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
             log.debug("Попытка установить {} к отзыву {} пользователем {}",
                     isPositive ? "лайк" : "дизлайк", reviewId, userId);
 
-            String checkQuery = "SELECT COUNT(*) FROM review_likes WHERE review_id = ? AND user_id = ?";
-            int count = jdbc.queryForObject(checkQuery, Integer.class, reviewId, userId);
+            int count = jdbc.queryForObject(CHECK_LIKE_QUERY, Integer.class, reviewId, userId);
 
             if (count == 0) {
-                String insertQuery = "INSERT INTO review_likes (review_id, user_id, is_positive) VALUES (?, ?, ?)";
-                jdbc.update(insertQuery, reviewId, userId, isPositive);
+                jdbc.update(INSERT_LIKE_QUERY, reviewId, userId, isPositive);
                 updateUsefulCount(reviewId, isPositive ? 1 : -1);
                 log.debug("Добавлен {} для отзыва {} пользователем {}",
                         isPositive ? "лайк" : "дизлайк", reviewId, userId);
             } else {
-                // Запись уже есть, обновим
-                String updateQuery = "UPDATE review_likes SET is_positive = ? WHERE review_id = ? AND user_id = ?";
-                jdbc.update(updateQuery, isPositive, reviewId, userId);
+                jdbc.update(UPDATE_LIKE_QUERY, isPositive, reviewId, userId);
                 updateUsefulCount(reviewId, isPositive ? 2 : -2);
                 log.debug("Обновлен {} для отзыва {} пользователем {}",
                         isPositive ? "лайк" : "дизлайк", reviewId, userId);
             }
-
             return true;
         } catch (Exception e) {
             log.error("Ошибка при установке {} для отзыва {} пользователем {}: {}",
@@ -92,8 +104,7 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
     }
 
     private void updateUsefulCount(long reviewId, int delta) {
-        String query = "UPDATE reviews SET useful = useful + ? WHERE review_id = ?";
-        jdbc.update(query, delta, reviewId);
+        jdbc.update(UPDATE_USEFUL_QUERY, delta, reviewId);
         log.debug("Рейтинг отзыва {} изменен на {}", reviewId, delta > 0 ? "+" + delta : delta);
     }
 
@@ -101,8 +112,7 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
     public boolean removeLikeOrDislike(long reviewId, long userId) {
         try {
             log.debug("Удаляем лайк/дизлайк к отзыву {} пользователем {}", reviewId, userId);
-            String query = "DELETE FROM review_likes WHERE review_id = ? AND user_id = ?";
-            int affectedRows = jdbc.update(query, reviewId, userId);
+            int affectedRows = jdbc.update(DELETE_LIKE_QUERY, reviewId, userId);
 
             if (affectedRows > 0) {
                 log.debug("Лайк/дизлайк удален. Обновляем рейтинг.");
@@ -118,9 +128,9 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
     }
 
     private int getUsefulDelta(long reviewId, long userId) {
-        String query = "SELECT is_positive FROM review_likes WHERE review_id = ? AND user_id = ?";
-        Boolean isPositive = jdbc.query(query, rs -> rs.next() ? rs.getBoolean("is_positive") : null, reviewId, userId);
+        Boolean isPositive = jdbc.query(GET_LIKE_STATUS_QUERY,
+                rs -> rs.next() ? rs.getBoolean("is_positive") : null,
+                reviewId, userId);
         return (isPositive != null && isPositive) ? -1 : 1;
     }
-
 }
