@@ -51,3 +51,32 @@ CREATE TABLE IF NOT EXISTS friends (
     PRIMARY KEY (user_id, friend_id)
 );
 
+CREATE TABLE IF NOT EXISTS reviews (
+     review_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+     content TEXT NOT NULL,
+     is_positive BOOLEAN NOT NULL,
+     user_id BIGINT NOT NULL,
+     film_id BIGINT NOT NULL,
+     useful INT DEFAULT 0,
+     CONSTRAINT fk_review_user
+         FOREIGN KEY (user_id)
+             REFERENCES users(user_id)
+             ON DELETE CASCADE,
+     CONSTRAINT fk_review_film
+         FOREIGN KEY (film_id)
+             REFERENCES films(film_id)
+             ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS review_likes (
+    review_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    is_positive BOOLEAN NOT NULL,
+    PRIMARY KEY (review_id, user_id),
+    FOREIGN KEY (review_id) REFERENCES reviews(review_id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
+
+
+
