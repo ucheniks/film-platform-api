@@ -22,7 +22,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private static final String UPDATE_QUERY = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? WHERE film_id = ?";
     private static final String ADD_LIKE_QUERY = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
-    private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+    private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
+    private static final String GET_POPULAR_QUERY_GENRE = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id LEFT JOIN film_genres fg ON f.film_id = fg.film_id WHERE fg.genre_id = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
+    private static final String GET_POPULAR_QUERY_YEAR = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id WHERE EXTRACT(YEAR FROM CAST(release_date AS DATE)) = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
+    private static final String GET_POPULAR_QUERY_GENRE_AND_YEAR = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id LEFT JOIN film_genres fg ON f.film_id = fg.film_id WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM CAST(release_date AS DATE)) = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
 
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
 
@@ -95,8 +98,33 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         jdbc.update(REMOVE_LIKE_QUERY, filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int count) {
-        return jdbc.query(GET_POPULAR_QUERY, filmRowMapper, count);
+    public List<Film> getPopularFilms(Integer count, Long genreId, Integer year) {
+        String query;
+        if (genreId != null && year != null) {
+            query = GET_POPULAR_QUERY_GENRE_AND_YEAR;
+            query += limiter(count);
+            return jdbc.query(query, filmRowMapper, genreId, year);
+        } else if (genreId != null) {
+            query = GET_POPULAR_QUERY_GENRE;
+            query += limiter(count);
+            return jdbc.query(query, filmRowMapper, genreId);
+        } else if (year != null) {
+            query = GET_POPULAR_QUERY_YEAR;
+            query += limiter(count);
+            return jdbc.query(query, filmRowMapper, year);
+        } else {
+            query = GET_POPULAR_QUERY;
+            query += limiter(count);
+            return jdbc.query(query, filmRowMapper);
+        }
+    }
+
+    private String limiter(Integer count) {
+        String limiter = "";
+        if (count != null) {
+            limiter = " LIMIT " + count.toString();
+        }
+        return limiter;
     }
 
     private Film setMpaAndGenresToFilm(Film film) {
