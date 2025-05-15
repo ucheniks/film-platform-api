@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.exceptions.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.dal.FilmDbStorage;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
+import ru.yandex.practicum.filmorate.model.enums.EventOperation;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
 
 import java.util.List;
 
@@ -18,6 +20,7 @@ import java.util.List;
 public class FilmService {
     private final FilmDbStorage filmStorage;
     private final UserDbStorage userStorage;
+    private final EventService eventService;
 
     public List<Film> getFilms() {
         return filmStorage.getFilms();
@@ -45,6 +48,12 @@ public class FilmService {
             throw new ValidationException("Пользователь уже поставил лайк");
         }
         filmStorage.addLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.ADD,
+                filmId
+        );
     }
 
     public void removeLike(Long filmId, Long userId) {
@@ -55,6 +64,12 @@ public class FilmService {
             throw new NotFoundException("Лайк не найден");
         }
         filmStorage.removeLike(filmId, userId);
+        eventService.addEvent(
+                userId,
+                EventType.LIKE,
+                EventOperation.REMOVE,
+                filmId
+        );
     }
 
     public List<Film> getPopularFilms(int count) {

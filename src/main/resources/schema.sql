@@ -90,5 +90,13 @@ CREATE TABLE IF NOT EXISTS review_likes (
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
-
+CREATE TABLE IF NOT EXISTS events (
+    event_id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    timestamp BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,
+    event_type VARCHAR(10) NOT NULL CHECK (event_type IN ('LIKE', 'REVIEW', 'FRIEND')),
+    operation VARCHAR(10) NOT NULL CHECK (operation IN ('ADD', 'REMOVE', 'UPDATE')),
+    entity_id BIGINT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
+);
 
