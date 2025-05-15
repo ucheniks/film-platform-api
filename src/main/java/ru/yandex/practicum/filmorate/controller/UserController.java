@@ -73,6 +73,12 @@ public class UserController {
         return userService.getCommonFriends(id, otherId);
     }
 
+    @DeleteMapping("/{userId}")
+    public void deleteUserById(@PathVariable Long userId) {
+        log.info("Удаление пользователя с id {}", userId);
+        userService.deleteUserById(userId);
+    }
+
     @GetMapping("/{id}/recommendations")
     public List<Film> showRecommendations(@PathVariable Long id) {
         log.info("Показ рекомендаций фильмов для пользователя {}", id);

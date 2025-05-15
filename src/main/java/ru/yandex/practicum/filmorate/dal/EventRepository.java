@@ -18,8 +18,10 @@ public class EventRepository {
     private static final String GET_EVENTS_QUERY =
             "SELECT * FROM events WHERE user_id = ? ORDER BY timestamp";
 
+
     private final JdbcTemplate jdbc;
     private final EventRowMapper eventRowMapper;
+    private final UserDbStorage userStorage;
 
 
     public void addEvent(Long userId, EventType eventType, EventOperation operation, Long entityId) {
@@ -32,6 +34,7 @@ public class EventRepository {
     }
 
     public List<Event> getUserFeed(Long userId) {
+        userStorage.getUserById(userId);
         return jdbc.query(GET_EVENTS_QUERY, eventRowMapper, userId);
     }
 }

@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dal.FilmDbStorage;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
-import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.model.enums.EventOperation;
 import ru.yandex.practicum.filmorate.model.enums.EventType;
@@ -26,9 +25,6 @@ public class ReviewService {
     @Transactional
     public Review addReview(Review review) {
         validateUserAndFilmExist(review.getUserId(), review.getFilmId());
-        if (review.getContent().isEmpty()) {
-            throw new IllegalArgumentException("Content cannot be empty.");
-        }
         Review newReview = reviewStorage.addReview(review);
         eventService.addEvent(
                 newReview.getUserId(),
@@ -42,15 +38,17 @@ public class ReviewService {
 
     @Transactional
     public Review updateReview(Review review) {
-        validateReviewExists(review.getReviewId());
-        Review updatedReview = reviewStorage.updateReview(review);
+        Review existingReview = getReviewById(review.getReviewId());
+        existingReview.setContent(review.getContent());
+        existingReview.setIsPositive(review.getIsPositive());
+
+        Review updatedReview = reviewStorage.updateReview(existingReview);
         eventService.addEvent(
                 updatedReview.getUserId(),
                 EventType.REVIEW,
                 EventOperation.UPDATE,
                 updatedReview.getReviewId()
         );
-
         return updatedReview;
     }
 
@@ -67,18 +65,23 @@ public class ReviewService {
     }
 
     public Review getReviewById(long reviewId) {
-        return reviewStorage.getReviewById(reviewId)
-                .orElseThrow(() -> new NotFoundException("Review with ID " + reviewId + " not found."));
+        return reviewStorage.getReviewById(reviewId);
     }
 
     public List<Review> getReviewsByFilmId(Long filmId, int count) {
-        return reviewStorage.getReviewsByFilmId(filmId, count);
+        log.info("Получение отзывов в сервисе");
+        boolean byFilm = true;
+        if (filmId == null) {
+            filmId = -1L;
+            byFilm = false;
+        }
+        return reviewStorage.getReviewsByFilmId(filmId, count, byFilm);
     }
 
     @Transactional
     public void setLikeOrDislike(long reviewId, long userId, boolean isPositive) {
-        validateUserExists(userId);
-        validateReviewExists(reviewId);
+        userDbStorage.getUserById(userId);
+        reviewStorage.getReviewById(reviewId);
 
         boolean success = reviewStorage.setLikeOrDislike(reviewId, userId, isPositive);
         if (!success) {
@@ -89,8 +92,8 @@ public class ReviewService {
     @Transactional
     public void removeLikeOrDislike(long reviewId, long userId) {
         log.debug("Попытка удалить лайк/дизлайк к отзыву {} пользователем {}", reviewId, userId);
-        validateUserExists(userId);
-        validateReviewExists(reviewId);
+        userDbStorage.getUserById(userId);
+        reviewStorage.getReviewById(reviewId);
 
         boolean success = reviewStorage.removeLikeOrDislike(reviewId, userId);
         if (!success) {
@@ -98,26 +101,10 @@ public class ReviewService {
         }
     }
 
-    private void validateReviewExists(long reviewId) {
-        if (reviewStorage.getReviewById(reviewId).isEmpty()) {
-            throw new NotFoundException("Review with ID " + reviewId + " not found.");
-        }
-    }
 
     private void validateUserAndFilmExist(long userId, long filmId) {
-        validateUserExists(userId);
-        validateFilmExists(filmId);
+        userDbStorage.getUserById(userId);
+        filmDbStorage.getFilmById(filmId);
     }
 
-    private void validateUserExists(long userId) {
-        if (userDbStorage.getUserById(userId) == null) {
-            throw new NotFoundException("User with ID " + userId + " not found.");
-        }
-    }
-
-    private void validateFilmExists(long filmId) {
-        if (filmDbStorage.getFilmById(filmId) == null) {
-            throw new NotFoundException("Film with ID " + filmId + " not found.");
-        }
-    }
 }

@@ -6,11 +6,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import ru.yandex.practicum.filmorate.dal.mappers.ReviewRowMapper;
 import ru.yandex.practicum.filmorate.exceptions.InternalServerException;
+import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
 import ru.yandex.practicum.filmorate.storage.film.ReviewStorage;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Repository
@@ -18,6 +18,7 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
 
     private static final String FIND_BY_ID_QUERY = "SELECT * FROM reviews WHERE review_id = ?";
     private static final String FIND_BY_FILM_QUERY = "SELECT * FROM reviews WHERE film_id = ? ORDER BY useful DESC LIMIT ?";
+    private static final String FIND_ALL_QUERY = "SELECT * FROM reviews ORDER BY useful DESC LIMIT ?";
     private static final String INSERT_REVIEW_QUERY =
             "INSERT INTO reviews (content, is_positive, user_id, film_id, useful) VALUES (?, ?, ?, ?, 0)";
     private static final String UPDATE_REVIEW_QUERY =
@@ -44,13 +45,19 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
     }
 
     @Override
-    public Optional<Review> getReviewById(long reviewId) {
-        return findOne(FIND_BY_ID_QUERY, reviewId);
+    public Review getReviewById(long reviewId) {
+        return findOne(FIND_BY_ID_QUERY, reviewId)
+                .orElseThrow(() -> new NotFoundException("Review with ID " + reviewId + " not found."));
     }
 
     @Override
-    public List<Review> getReviewsByFilmId(long filmId, int count) {
-        return findMany(FIND_BY_FILM_QUERY, filmId, count);
+    public List<Review> getReviewsByFilmId(long filmId, int count, boolean byFilm) {
+        log.info("Получение отзывов в хранилище");
+        if (byFilm) {
+            return findMany(FIND_BY_FILM_QUERY, filmId, count);
+        } else {
+            return findMany(FIND_ALL_QUERY, count);
+        }
     }
 
     @Override
@@ -82,7 +89,6 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
                     isPositive ? "лайк" : "дизлайк", reviewId, userId);
 
             int count = jdbc.queryForObject(CHECK_LIKE_QUERY, Integer.class, reviewId, userId);
-
             if (count == 0) {
                 jdbc.update(INSERT_LIKE_QUERY, reviewId, userId, isPositive);
                 updateUsefulCount(reviewId, isPositive ? 1 : -1);
