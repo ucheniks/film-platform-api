@@ -72,7 +72,7 @@ class FilmDbStorageTest {
         film2.setMpa(new MpaRating(2L, null));
         film2 = filmStorage.addFilm(film2);
 
-        List<Film> popularFilms = filmStorage.getPopularFilms(2);
+        List<Film> popularFilms = filmStorage.getPopularFilms(2, null, null);
 
         assertThat(popularFilms).hasSize(2);
     }

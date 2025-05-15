@@ -57,11 +57,11 @@ public class FilmService {
         filmStorage.removeLike(filmId, userId);
     }
 
-    public List<Film> getPopularFilms(int count) {
-        if (count <= 0) {
+    public List<Film> getPopularFilms(Integer count, Long genreId, Integer year) {
+        if (count != null && count <= 0) {
             throw new ParameterNotValidException("count Должно быть положительным");
         }
-        return filmStorage.getPopularFilms(count);
+        return filmStorage.getPopularFilms(count, genreId, year);
     }
 
     public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
