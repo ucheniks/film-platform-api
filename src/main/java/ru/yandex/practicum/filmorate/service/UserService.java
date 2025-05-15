@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.exceptions.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
 
@@ -77,5 +78,10 @@ public class UserService {
     public List<User> getCommonFriends(Long userId, Long otherId) {
         log.info("Поиск общих друзей пользователей {} и {}", userId, otherId);
         return userStorage.getCommonFriends(userId, otherId);
+    }
+
+    public List<Film> showRecommendations(Long userId) {
+        log.info("Показ рекомендаций фильмов для пользователя {}", userId);
+        return userStorage.showRecommendations(userId);
     }
 }
