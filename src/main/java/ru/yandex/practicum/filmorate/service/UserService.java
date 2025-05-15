@@ -8,6 +8,8 @@ import ru.yandex.practicum.filmorate.exceptions.*;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
+import ru.yandex.practicum.filmorate.model.enums.EventOperation;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
 
 import java.util.List;
 
@@ -17,6 +19,7 @@ import java.util.List;
 @Validated
 public class UserService {
     private final UserDbStorage userStorage;
+    private final EventService eventService;
 
     public List<User> getUsers() {
         log.info("Получение списка всех пользователей");
@@ -53,6 +56,12 @@ public class UserService {
             throw new ValidationException(error);
         }
         userStorage.addFriend(userId, friendId);
+        eventService.addEvent(
+                userId,
+                EventType.FRIEND,
+                EventOperation.ADD,
+                friendId
+        );
         log.info("Пользователи {} и {} теперь друзья", userId, friendId);
     }
 
@@ -60,6 +69,12 @@ public class UserService {
         log.info("Пользователь {} удаляет из друзей пользователя {}", userId, friendId);
         User user = getUserById(userId);
         userStorage.removeFriend(userId, friendId);
+        eventService.addEvent(
+                userId,
+                EventType.FRIEND,
+                EventOperation.REMOVE,
+                friendId
+        );
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
     }
 

@@ -1,30 +1,27 @@
 package ru.yandex.practicum.filmorate.service;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.filmorate.dal.FilmDbStorage;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
 import ru.yandex.practicum.filmorate.exceptions.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Review;
+import ru.yandex.practicum.filmorate.model.enums.EventOperation;
+import ru.yandex.practicum.filmorate.model.enums.EventType;
 import ru.yandex.practicum.filmorate.storage.film.ReviewStorage;
 
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class ReviewService {
     private final ReviewStorage reviewStorage;
     private final FilmDbStorage filmDbStorage;
     private final UserDbStorage userDbStorage;
-
-    @Autowired
-    public ReviewService(ReviewStorage reviewStorage, FilmDbStorage filmDbStorage, UserDbStorage userDbStorage) {
-        this.reviewStorage = reviewStorage;
-        this.filmDbStorage = filmDbStorage;
-        this.userDbStorage = userDbStorage;
-    }
+    private final EventService eventService;
 
     @Transactional
     public Review addReview(Review review) {
@@ -32,19 +29,41 @@ public class ReviewService {
         if (review.getContent().isEmpty()) {
             throw new IllegalArgumentException("Content cannot be empty.");
         }
-        return reviewStorage.addReview(review);
+        Review newReview = reviewStorage.addReview(review);
+        eventService.addEvent(
+                newReview.getUserId(),
+                EventType.REVIEW,
+                EventOperation.ADD,
+                newReview.getReviewId()
+        );
+
+        return newReview;
     }
 
     @Transactional
     public Review updateReview(Review review) {
         validateReviewExists(review.getReviewId());
-        return reviewStorage.updateReview(review);
+        Review updatedReview = reviewStorage.updateReview(review);
+        eventService.addEvent(
+                updatedReview.getUserId(),
+                EventType.REVIEW,
+                EventOperation.UPDATE,
+                updatedReview.getReviewId()
+        );
+
+        return updatedReview;
     }
 
     @Transactional
     public void deleteReview(long reviewId) {
-        validateReviewExists(reviewId);
+        Review review = getReviewById(reviewId);
         reviewStorage.deleteReview(reviewId);
+        eventService.addEvent(
+                review.getUserId(),
+                EventType.REVIEW,
+                EventOperation.REMOVE,
+                reviewId
+        );
     }
 
     public Review getReviewById(long reviewId) {
