@@ -60,7 +60,6 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             GROUP BY f.film_id
             ORDER BY COUNT(l.user_id) DESC
             """;
-    private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
     private static final String GET_LIKED_FILMS = "SELECT film_id FROM likes WHERE user_id = ?";
     private static final String GET_SIMILAR_USER = "SELECT user_id FROM likes WHERE film_id IN (SELECT film_id FROM likes WHERE user_id = ?) AND user_id != ? GROUP BY user_id ORDER BY COUNT(film_id) DESC LIMIT 1";
     private static final String GET_SIMILAR_USER_LIKED_FILMS = "SELECT  f.* FROM films f JOIN likes l ON f.film_id = l.film_id WHERE user_id IN (" + GET_SIMILAR_USER + ")";
@@ -246,7 +245,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             throw new NotFoundException("Id жанров должны быть в диапазоне от 1 до 6");
         }
     }
-  
+
     private String checkSearchParams(String[] by) {
         if (by == null || by.length == 0 || by.length > 2) {
             log.error("Недопустимое количество параметров by: {}", by != null ? by.length : "null");
