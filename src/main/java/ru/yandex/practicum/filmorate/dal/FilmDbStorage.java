@@ -25,15 +25,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private static final String UPDATE_QUERY = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? WHERE film_id = ?";
     private static final String ADD_LIKE_QUERY = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
+    private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
     private static final String GET_POPULAR_QUERY_GENRE = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id LEFT JOIN film_genres fg ON f.film_id = fg.film_id WHERE fg.genre_id = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
     private static final String GET_POPULAR_QUERY_YEAR = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id WHERE EXTRACT(YEAR FROM CAST(release_date AS DATE)) = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
     private static final String GET_POPULAR_QUERY_GENRE_AND_YEAR = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id LEFT JOIN film_genres fg ON f.film_id = fg.film_id WHERE fg.genre_id = ? AND EXTRACT(YEAR FROM CAST(release_date AS DATE)) = ? GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC";
-    private static final String GET_POPULAR_QUERY = """
-            SELECT f.* FROM films f
-            LEFT JOIN likes l ON f.film_id = l.film_id
-            GROUP BY f.film_id
-            ORDER BY COUNT(l.user_id) DESC
-            LIMIT ?""";
     private static final String GET_SEARCH_BY_TITLE_QUERY = """
             SELECT f.*
             FROM films f
