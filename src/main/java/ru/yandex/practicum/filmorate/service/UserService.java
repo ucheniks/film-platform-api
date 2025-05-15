@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.exceptions.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
 
@@ -58,13 +59,6 @@ public class UserService {
     public void removeFriend(Long userId, Long friendId) {
         log.info("Пользователь {} удаляет из друзей пользователя {}", userId, friendId);
         User user = getUserById(userId);
-
-        /*if (!user.getFriends().containsKey(friendId)) {
-            String error = String.format("Пользователь %d не найден в друзьях у пользователя %d", friendId, userId);
-            log.error(error);
-            throw new NotFoundException(error);
-        }*/
-
         userStorage.removeFriend(userId, friendId);
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
     }
@@ -77,5 +71,15 @@ public class UserService {
     public List<User> getCommonFriends(Long userId, Long otherId) {
         log.info("Поиск общих друзей пользователей {} и {}", userId, otherId);
         return userStorage.getCommonFriends(userId, otherId);
+    }
+
+    public void deleteUserById(Long id) {
+        log.info("Удаления пользователя с id {}", id);
+        userStorage.deleteUserById(id);
+    }
+
+    public List<Film> showRecommendations(Long userId) {
+        log.info("Показ рекомендаций фильмов для пользователя {}", userId);
+        return userStorage.showRecommendations(userId);
     }
 }

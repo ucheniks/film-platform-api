@@ -74,4 +74,13 @@ public class FilmService {
         }
         return filmStorage.getCommonFilms(userId, friendId);
     }
+
+    public void deleteFilmById(Long id) {
+        log.info("Удаления фильма с id {}", id);
+        filmStorage.deleteFilmById(id);
+    }
+
+    public List<Film> searchFilms(String query, String[] by) {
+        return filmStorage.searchFilms(query, by);
+    }
 }
