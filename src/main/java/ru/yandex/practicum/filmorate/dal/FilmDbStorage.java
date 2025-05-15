@@ -14,6 +14,7 @@ import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Repository
@@ -24,7 +25,45 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     private static final String UPDATE_QUERY = "UPDATE films SET name = ?, description = ?, release_date = ?, duration = ?, rating_id = ? WHERE film_id = ?";
     private static final String ADD_LIKE_QUERY = "INSERT INTO likes(film_id, user_id) VALUES (?, ?)";
     private static final String REMOVE_LIKE_QUERY = "DELETE FROM likes WHERE film_id = ? AND user_id = ?";
-    private static final String GET_POPULAR_QUERY = "SELECT f.* FROM films f LEFT JOIN likes l ON f.film_id = l.film_id GROUP BY f.film_id ORDER BY COUNT(l.user_id) DESC LIMIT ?";
+    private static final String GET_POPULAR_QUERY = """
+            SELECT f.* FROM films f
+            LEFT JOIN likes l ON f.film_id = l.film_id
+            GROUP BY f.film_id
+            ORDER BY COUNT(l.user_id) DESC
+            LIMIT ?""";
+    private static final String GET_SEARCH_BY_TITLE_QUERY = """
+            SELECT f.*
+            FROM films f
+            LEFT JOIN likes l ON f.film_id = l.film_id
+            WHERE UPPER(f.name) LIKE UPPER(CONCAT('%', ?, '%'))
+            GROUP BY f.film_id
+            ORDER BY COUNT(l.user_id) DESC
+            """;
+    private static final String GET_SEARCH_BY_DIRECTOR_QUERY = """
+            SELECT f.*
+            FROM films f
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            LEFT JOIN likes l ON f.film_id = l.film_id
+            WHERE UPPER(d.name) LIKE UPPER(CONCAT('%', ?, '%'))
+            GROUP BY f.film_id
+            ORDER BY COUNT(l.user_id) DESC
+            """;
+    private static final String GET_SEARCH_BY_BOTH_QUERY = """
+            SELECT f.*
+            FROM films f
+            LEFT JOIN film_directors fd ON f.film_id = fd.film_id
+            LEFT JOIN directors d ON fd.director_id = d.director_id
+            LEFT JOIN likes l ON f.film_id = l.film_id
+            WHERE UPPER(f.name) LIKE UPPER(CONCAT('%', ?, '%')) OR
+                  UPPER(d.name) LIKE UPPER(CONCAT('%', ?, '%'))
+            GROUP BY f.film_id
+            ORDER BY COUNT(l.user_id) DESC
+            """;
+    private static final String GET_LIKED_FILMS = "SELECT film_id FROM likes WHERE user_id = ?";
+    private static final String GET_SIMILAR_USER = "SELECT user_id FROM likes WHERE film_id IN (SELECT film_id FROM likes WHERE user_id = ?) AND user_id != ? GROUP BY user_id ORDER BY COUNT(film_id) DESC LIMIT 1";
+    private static final String GET_SIMILAR_USER_LIKED_FILMS = "SELECT  f.* FROM films f JOIN likes l ON f.film_id = l.film_id WHERE user_id IN (" + GET_SIMILAR_USER + ")";
+    private static final String GET_FILM_RECOMMENDATIONS = GET_SIMILAR_USER_LIKED_FILMS + "AND l.film_id NOT IN (" + GET_LIKED_FILMS + ")";
     private static final String GET_DIRECTORS_FILMS_BY_LIKES = """
             SELECT f.*
             FROM films f
@@ -126,6 +165,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         return jdbc.query(GET_POPULAR_QUERY, filmRowMapper, count);
     }
 
+    public List<Film> getRecommendations(Long userId) {
+        return jdbc.query(GET_FILM_RECOMMENDATIONS, mapper, userId, userId, userId);
+    }
+
     public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
         directorRepository.getById(directorId);
         switch (sortBy) {
@@ -145,6 +188,18 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     public void deleteFilmById(Long id) {
         getFilmById(id);
         update(REMOVE_FILM_BY_ID_QUERY, id);
+    public List<Film> searchFilms(String query, String[] by) {
+        String searchType = checkSearchParams(by);
+        switch (searchType) {
+            case "both":
+                return jdbc.query(GET_SEARCH_BY_BOTH_QUERY, filmRowMapper, query, query);
+            case "title":
+                return jdbc.query(GET_SEARCH_BY_TITLE_QUERY, filmRowMapper, query);
+            case "director":
+                return jdbc.query(GET_SEARCH_BY_DIRECTOR_QUERY, filmRowMapper, query);
+            default:
+                throw new ValidationException("Ошибка при определении типа поиска");
+        }
     }
 
     private Film setMpaAndGenresAndDirectorsToFilm(Film film) {
@@ -198,5 +253,27 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         }
     }
 
+    private String checkSearchParams(String[] by) {
+        if (by == null || by.length == 0 || by.length > 2) {
+            log.error("Недопустимое количество параметров by: {}", by != null ? by.length : "null");
+            throw new ParameterNotValidException("Параметр by должен содержать 1 или 2 значения (title/director)");
+        }
 
+        Set<String> params = Arrays.stream(by)
+                .map(String::toLowerCase)
+                .collect(Collectors.toSet());
+
+        if (params.size() == 2 && params.contains("title") && params.contains("director")) {
+            return "both";
+        }
+        if (params.size() == 1) {
+            if (params.contains("title")) return "title";
+            if (params.contains("director")) return "director";
+        }
+
+        log.error("Недопустимые значения параметра by: {}", Arrays.toString(by));
+        throw new ParameterNotValidException(
+                "Параметр by должен содержать только 'title' и/или 'director'"
+        );
+    }
 }

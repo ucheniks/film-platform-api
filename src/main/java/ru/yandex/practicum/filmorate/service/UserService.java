@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.annotation.Validated;
 import ru.yandex.practicum.filmorate.exceptions.*;
+import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.User;
 import ru.yandex.practicum.filmorate.dal.UserDbStorage;
 
@@ -75,5 +76,9 @@ public class UserService {
     public void deleteUserById(Long id) {
         log.info("Удаления пользователя с id {}", id);
         userStorage.deleteUserById(id);
+      
+    public List<Film> showRecommendations(Long userId) {
+        log.info("Показ рекомендаций фильмов для пользователя {}", userId);
+        return userStorage.showRecommendations(userId);
     }
 }
