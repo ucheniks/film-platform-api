@@ -142,6 +142,8 @@ public class UserDbStorage extends BaseDbStorage<User> implements UserStorage {
     public void deleteUserById(Long id) {
         getUserById(id);
         update(REMOVE_USER_BY_ID_QUERY, id);
+    }
+
     public List<Film> showRecommendations(Long userId) {
         getUserById(userId);
         return filmStorage.getRecommendations(userId);

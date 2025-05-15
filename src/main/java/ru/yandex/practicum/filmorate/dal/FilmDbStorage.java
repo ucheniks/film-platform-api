@@ -188,6 +188,8 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     public void deleteFilmById(Long id) {
         getFilmById(id);
         update(REMOVE_FILM_BY_ID_QUERY, id);
+    }
+
     public List<Film> searchFilms(String query, String[] by) {
         String searchType = checkSearchParams(by);
         switch (searchType) {

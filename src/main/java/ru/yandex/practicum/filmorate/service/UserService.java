@@ -76,7 +76,8 @@ public class UserService {
     public void deleteUserById(Long id) {
         log.info("Удаления пользователя с id {}", id);
         userStorage.deleteUserById(id);
-      
+    }
+
     public List<Film> showRecommendations(Long userId) {
         log.info("Показ рекомендаций фильмов для пользователя {}", userId);
         return userStorage.showRecommendations(userId);
