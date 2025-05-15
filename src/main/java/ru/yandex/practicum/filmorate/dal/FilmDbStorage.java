@@ -82,6 +82,10 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
             ORDER BY f.release_date
             """;
     private static final String GET_COMMON_QUERY = "SELECT f.* FROM films f JOIN likes l1 ON f.film_id = l1.film_id AND l1.user_id = ? JOIN likes l2 ON f.film_id = l2.film_id AND l2.user_id = ?";
+    private static final String REMOVE_FILM_BY_ID_QUERY = """
+            DELETE FROM films
+            WHERE film_id = ?
+            """;
 
     private static final LocalDate MIN_RELEASE_DATE = LocalDate.of(1895, 12, 28);
 
@@ -179,6 +183,11 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
 
     public List<Film> getCommonFilms(Long userId, Long friendId) {
         return (jdbc.query(GET_COMMON_QUERY, filmRowMapper, userId, friendId));
+    }
+
+    public void deleteFilmById(Long id) {
+        getFilmById(id);
+        update(REMOVE_FILM_BY_ID_QUERY, id);
     }
 
     public List<Film> searchFilms(String query, String[] by) {

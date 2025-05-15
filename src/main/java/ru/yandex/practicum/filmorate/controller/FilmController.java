@@ -82,11 +82,16 @@ public class FilmController {
         return filmService.getCommonFilms(userId, friendId);
     }
 
+    @DeleteMapping("/{filmId}")
+    public void deleteFilmById(@PathVariable Long filmId) {
+        log.info("Удаление фильма с id {}", filmId);
+        filmService.deleteFilmById(filmId);
+    }
+
     @GetMapping("/search")
     public List<Film> searchFilms(
             @RequestParam String query,
-            @RequestParam(defaultValue = "title,director") String[] by
-    ) {
+            @RequestParam(defaultValue = "title,director") String[] by) {
         log.info("Получение фильмов с подстрокой {} в {}", query, by);
         return filmService.searchFilms(query, by);
     }
