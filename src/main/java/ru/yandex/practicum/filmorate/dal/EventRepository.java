@@ -38,3 +38,5 @@ public class EventRepository {
         return jdbc.query(GET_EVENTS_QUERY, eventRowMapper, userId);
     }
 }
+
+
