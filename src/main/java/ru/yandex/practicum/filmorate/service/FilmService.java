@@ -43,9 +43,14 @@ public class FilmService {
     public void addLike(Long filmId, Long userId) {
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
-
         if (film.getLikes().contains(userId)) {
-            throw new ValidationException("Пользователь уже поставил лайк");
+            eventService.addEvent(
+                    userId,
+                    EventType.LIKE,
+                    EventOperation.ADD,
+                    filmId
+            );
+            return;
         }
         filmStorage.addLike(filmId, userId);
         eventService.addEvent(
