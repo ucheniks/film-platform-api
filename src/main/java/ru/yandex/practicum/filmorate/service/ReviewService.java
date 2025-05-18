@@ -24,6 +24,7 @@ public class ReviewService {
 
     @Transactional
     public Review addReview(Review review) {
+        log.info("Добавление отзыва на уровне сервиса");
         validateUserAndFilmExist(review.getUserId(), review.getFilmId());
         Review newReview = reviewStorage.addReview(review);
         eventService.addEvent(
@@ -38,6 +39,7 @@ public class ReviewService {
 
     @Transactional
     public Review updateReview(Review review) {
+        log.info("Обновление отзыва на уровне сервиса");
         Review existingReview = getReviewById(review.getReviewId());
         existingReview.setContent(review.getContent());
         existingReview.setIsPositive(review.getIsPositive());
@@ -54,6 +56,7 @@ public class ReviewService {
 
     @Transactional
     public void deleteReview(long reviewId) {
+        log.info("Удаление отзыва с ID {} на уровне сервиса", reviewId);
         Review review = getReviewById(reviewId);
         reviewStorage.deleteReview(reviewId);
         eventService.addEvent(
@@ -65,11 +68,12 @@ public class ReviewService {
     }
 
     public Review getReviewById(long reviewId) {
+        log.info("Получения отзыва с ID {} на уровне сервиса", reviewId);
         return reviewStorage.getReviewById(reviewId);
     }
 
     public List<Review> getReviewsByFilmId(Long filmId, int count) {
-        log.info("Получение отзывов в сервисе");
+        log.info("Получение отзывов на уровне сервиса");
         boolean byFilm = true;
         if (filmId == null) {
             filmId = -1L;
@@ -80,6 +84,7 @@ public class ReviewService {
 
     @Transactional
     public void setLikeOrDislike(long reviewId, long userId, boolean isPositive) {
+        log.info("Лайк на отзыв с ID {} пользователем с ID {} на уровне сервиса", reviewId, userId);
         userDbStorage.getUserById(userId);
         reviewStorage.getReviewById(reviewId);
 
@@ -91,7 +96,7 @@ public class ReviewService {
 
     @Transactional
     public void removeLikeOrDislike(long reviewId, long userId) {
-        log.debug("Попытка удалить лайк/дизлайк к отзыву {} пользователем {}", reviewId, userId);
+        log.info("Попытка удалить лайк/дизлайк к отзыву {} пользователем {} на уровне сервиса", reviewId, userId);
         userDbStorage.getUserById(userId);
         reviewStorage.getReviewById(reviewId);
 

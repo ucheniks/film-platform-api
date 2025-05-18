@@ -11,6 +11,8 @@ import ru.yandex.practicum.filmorate.model.Director;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
+import ru.yandex.practicum.filmorate.model.enums.SortBy;
+import ru.yandex.practicum.filmorate.model.enums.SearchType;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -194,14 +196,11 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
 
     public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
         directorRepository.getById(directorId);
-        switch (sortBy) {
-            case "likes":
-                return jdbc.query(GET_DIRECTORS_FILMS_BY_LIKES, filmRowMapper, directorId);
-            case "year":
-                return jdbc.query(GET_DIRECTORS_FILMS_BY_YEAR, filmRowMapper, directorId);
-            default:
-                throw new ParameterNotValidException("Параметр сортировки может быть только: likes, year");
-        }
+        return switch (SortBy.valueOf(sortBy.toUpperCase())) {
+            case SortBy.LIKES -> jdbc.query(GET_DIRECTORS_FILMS_BY_LIKES, filmRowMapper, directorId);
+            case SortBy.YEAR -> jdbc.query(GET_DIRECTORS_FILMS_BY_YEAR, filmRowMapper, directorId);
+            default -> throw new ParameterNotValidException("Параметр сортировки может быть только: likes, year");
+        };
     }
 
     public List<Film> getCommonFilms(Long userId, Long friendId) {
@@ -214,17 +213,13 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
     }
 
     public List<Film> searchFilms(String query, String[] by) {
-        String searchType = checkSearchParams(by);
-        switch (searchType) {
-            case "both":
-                return jdbc.query(GET_SEARCH_BY_BOTH_QUERY, filmRowMapper, query, query);
-            case "title":
-                return jdbc.query(GET_SEARCH_BY_TITLE_QUERY, filmRowMapper, query);
-            case "director":
-                return jdbc.query(GET_SEARCH_BY_DIRECTOR_QUERY, filmRowMapper, query);
-            default:
-                throw new ValidationException("Ошибка при определении типа поиска");
-        }
+        SearchType searchType = checkSearchParams(by);
+        return switch (searchType) {
+            case SearchType.BOTH -> jdbc.query(GET_SEARCH_BY_BOTH_QUERY, filmRowMapper, query, query);
+            case SearchType.TITLE -> jdbc.query(GET_SEARCH_BY_TITLE_QUERY, filmRowMapper, query);
+            case SearchType.DIRECTOR -> jdbc.query(GET_SEARCH_BY_DIRECTOR_QUERY, filmRowMapper, query);
+            default -> throw new ValidationException("Ошибка при определении типа поиска");
+        };
     }
 
     private Film setMpaAndGenresAndDirectorsToFilm(Film film) {
@@ -278,7 +273,7 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
         }
     }
 
-    private String checkSearchParams(String[] by) {
+    private SearchType checkSearchParams(String[] by) {
         if (by == null || by.length == 0 || by.length > 2) {
             log.error("Недопустимое количество параметров by: {}", by != null ? by.length : "null");
             throw new ParameterNotValidException("Параметр by должен содержать 1 или 2 значения (title/director)");
@@ -289,11 +284,11 @@ public class FilmDbStorage extends BaseDbStorage<Film> implements FilmStorage {
                 .collect(Collectors.toSet());
 
         if (params.size() == 2 && params.contains("title") && params.contains("director")) {
-            return "both";
+            return SearchType.BOTH;
         }
         if (params.size() == 1) {
-            if (params.contains("title")) return "title";
-            if (params.contains("director")) return "director";
+            if (params.contains("title")) return SearchType.TITLE;
+            if (params.contains("director")) return SearchType.DIRECTOR;
         }
 
         log.error("Недопустимые значения параметра by: {}", Arrays.toString(by));
