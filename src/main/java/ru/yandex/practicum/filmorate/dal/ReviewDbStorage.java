@@ -101,7 +101,7 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
                         isPositive ? "лайк" : "дизлайк", reviewId, userId);
             }
             return true;
-        } catch (Exception e) {
+        } catch (InternalServerException e) {
             log.error("Ошибка при установке {} для отзыва {} пользователем {}: {}",
                     isPositive ? "лайка" : "дизлайка", reviewId, userId, e.getMessage(), e);
             throw new InternalServerException("Не удалось поставить " +
@@ -126,7 +126,7 @@ public class ReviewDbStorage extends BaseDbStorage<Review> implements ReviewStor
             }
 
             return affectedRows > 0;
-        } catch (Exception e) {
+        } catch (InternalServerException e) {
             log.error("Ошибка при удалении лайка/дизлайка для отзыва {} пользователем {}: {}",
                     reviewId, userId, e.getMessage(), e);
             throw new InternalServerException("Не удалось удалить лайк/дизлайк отзыву. Попробуйте позже.");

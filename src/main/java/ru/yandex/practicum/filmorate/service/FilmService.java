@@ -23,10 +23,12 @@ public class FilmService {
     private final EventService eventService;
 
     public List<Film> getFilms() {
+        log.info("Получение списка всех фильмов на уровне сервиса");
         return filmStorage.getFilms();
     }
 
     public Film getFilmById(Long id) {
+        log.info("Получение фильма с ID: {} на уровне сервиса", id);
         return filmStorage.getFilmById(id);
     }
 
@@ -36,11 +38,13 @@ public class FilmService {
     }
 
     public Film updateFilm(Film film) {
+        log.info("Обновление фильма с ID {} на уровне сервиса", film.getId());
         getFilmById(film.getId());
         return filmStorage.updateFilm(film);
     }
 
     public void addLike(Long filmId, Long userId) {
+        log.info("Добавление лайка фильму с ID {} от пользователя с ID {} на уровне сервиса", filmId, userId);
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
         if (film.getLikes().contains(userId)) {
@@ -62,6 +66,7 @@ public class FilmService {
     }
 
     public void removeLike(Long filmId, Long userId) {
+        log.info("Удаление лайка у фильма с ID {} от пользователя с ID {} на уровне сервиса", filmId, userId);
         Film film = getFilmById(filmId);
         userStorage.getUserById(userId);
 
@@ -78,6 +83,7 @@ public class FilmService {
     }
 
     public List<Film> getPopularFilms(Integer count, Long genreId, Integer year) {
+        log.info("Получение популярных фильмов на уровне сервиса");
         if (count != null && count <= 0) {
             throw new ParameterNotValidException("count Должно быть положительным");
         }
@@ -85,10 +91,12 @@ public class FilmService {
     }
 
     public List<Film> getDirectorsFilms(Long directorId, String sortBy) {
+        log.info("Получение фильмов режиссёра, отсортированных по {} на уровне сервиса", sortBy);
         return filmStorage.getDirectorsFilms(directorId, sortBy);
     }
 
     public List<Film> getCommonFilms(Long userId, Long friendId) {
+        log.info("Получение общих фильмов у пользователей с ID {} и {} на уровне сервиса", userId, friendId);
         if (userId == null || friendId == null) {
             throw new ParameterNotValidException("userId и friendId не могут быть null");
         }
@@ -96,11 +104,12 @@ public class FilmService {
     }
 
     public void deleteFilmById(Long id) {
-        log.info("Удаления фильма с id {}", id);
+        log.info("Удаления фильма с id {} на уровне сервиса", id);
         filmStorage.deleteFilmById(id);
     }
 
     public List<Film> searchFilms(String query, String[] by) {
+        log.info("Получение фильмов с подстрокой {} в {} на уровне сервиса", query, by);
         return filmStorage.searchFilms(query, by);
     }
 }

@@ -33,12 +33,13 @@ public class FilmController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public Film createFilm(@Valid @RequestBody Film film) {
-        log.info("Добавление фильма с id {} на уровне контроллера", film.getId());
+        log.info("Добавление фильма с ID {}", film.getId());
         return filmService.addFilm(film);
     }
 
     @PutMapping
     public Film updateFilm(@Valid @RequestBody Film film) {
+        log.info("Обновление фильма с ID {}", film.getId());
         return filmService.updateFilm(film);
     }
 
@@ -46,7 +47,7 @@ public class FilmController {
     public void addLike(
             @PathVariable Long id,
             @PathVariable Long userId) {
-        log.info("Добавление лайка фильму {} от пользователя {}", id, userId);
+        log.info("Добавление лайка фильму с ID {} от пользователя с ID {}", id, userId);
         filmService.addLike(id, userId);
     }
 
@@ -54,7 +55,7 @@ public class FilmController {
     public void removeLike(
             @PathVariable Long id,
             @PathVariable Long userId) {
-        log.info("Удаление лайка у фильма {} от пользователя {}", id, userId);
+        log.info("Удаление лайка у фильма с ID {} от пользователя с ID {}", id, userId);
         filmService.removeLike(id, userId);
     }
 
@@ -69,7 +70,7 @@ public class FilmController {
             log.info("Получение популярных фильмов");
         }
         if (genreId != null) {
-            log.info("С фильтрацией по жанру с id {}", genreId);
+            log.info("С фильтрацией по жанру с ID {}", genreId);
         }
         if (year != null) {
             log.info("С фильтрацией за {} год", year);
@@ -89,13 +90,13 @@ public class FilmController {
     public List<Film> getCommonFilms(
             @RequestParam Long userId,
             @RequestParam Long friendId) {
-        log.info("Получение общих фильмов у пользователей с id {} и {}", userId, friendId);
+        log.info("Получение общих фильмов у пользователей с ID {} и {}", userId, friendId);
         return filmService.getCommonFilms(userId, friendId);
     }
 
     @DeleteMapping("/{filmId}")
     public void deleteFilmById(@PathVariable Long filmId) {
-        log.info("Удаление фильма с id {}", filmId);
+        log.info("Удаление фильма с ID {}", filmId);
         filmService.deleteFilmById(filmId);
     }
 
