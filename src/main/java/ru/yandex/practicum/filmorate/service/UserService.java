@@ -58,13 +58,6 @@ public class UserService {
     public void removeFriend(Long userId, Long friendId) {
         log.info("Пользователь {} удаляет из друзей пользователя {}", userId, friendId);
         User user = getUserById(userId);
-
-        /*if (!user.getFriends().containsKey(friendId)) {
-            String error = String.format("Пользователь %d не найден в друзьях у пользователя %d", friendId, userId);
-            log.error(error);
-            throw new NotFoundException(error);
-        }*/
-
         userStorage.removeFriend(userId, friendId);
         log.info("Пользователи {} и {} больше не друзья", userId, friendId);
     }
