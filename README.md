@@ -1,4 +1,4 @@
-# Filmorate
+# Film Platform API
 
 **RESTful API сервис для оценки и рекомендации фильмов**
 
@@ -107,7 +107,7 @@ Backend-сервис, аналог Кинопоиск или IMDb, позвол�
 
 ## 1. Клонирование и сборка
 ```bash
-git clone https://github.com/ucheniks/java-filmorate.git
+git clone https://github.com/ucheniks/film-platform-api.git
 cd java-filmorate
 mvn clean package
 ```
